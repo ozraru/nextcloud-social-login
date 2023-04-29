@@ -479,17 +479,22 @@ class ProviderService
             }
             $userPassword = substr(base64_encode(random_bytes(64)), 0, 30);
 
-            if (
-                $profile->displayName && $newUid = preg_replace('#[^a-zA-Z0-9_.-]#', '', rtrim($profile->displayName, '/'))
-                && !empty($newUid) && $this->userManager->get($newUid) === null
-            ) {
-                $userUid = $newUid;
-                $this->socialConnect->connectLogin($userUid, $uid);
-            } else {
-                $userUid = $uid;
+            // first, remove all after invalid character.
+            $userUid = preg_replace('#[^a-zA-Z0-9_.-].*#', '', rtrim($profile->displayName, '/'));
+            if (empty($userUid) || $this->userManager->get($userUid) !== null) {
+                // if failed, remove only invalid character.
+                $userUid = preg_replace('#[^a-zA-Z0-9_.-]#', '', rtrim($profile->displayName, '/'));
+                if (empty($userUid) || $this->userManager->get($userUid) !== null) {
+                    // if failed, use original identifier.
+                    $userUid = $uid;
+                }
             }
 
             $user = $this->userManager->createUser($userUid, $userPassword);
+
+            if ($userUid !== $uid) {
+                $this->socialConnect->connectLogin($userUid, $uid);
+            }
 
             if ($this->config->getAppValue($this->appName, 'create_disabled_users')) {
                 $user->setEnabled(false);
