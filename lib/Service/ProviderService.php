@@ -483,7 +483,7 @@ class ProviderService
                 $profile->displayName && $newUid = preg_replace('#[^a-zA-Z0-9_.-]#', '', rtrim($profile->displayName, '/'))
                 && !empty($newUid) && $this->userManager->get($newUid) === null
             ) {
-                $userUid = $profile->displayName;
+                $userUid = $newUid;
                 $this->socialConnect->connectLogin($userUid, $uid);
             } else {
                 $userUid = $uid;
