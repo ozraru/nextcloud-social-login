@@ -479,7 +479,10 @@ class ProviderService
             }
             $userPassword = substr(base64_encode(random_bytes(64)), 0, 30);
 
-            if ($profile->displayName && $this->userManager->get($profile->displayName) === null) {
+            if (
+                $profile->displayName && $newUid = preg_replace('#[^a-zA-Z0-9_.-]#', '', rtrim($profile->displayName, '/'))
+                && !empty($newUid) && $this->userManager->get($newUid) === null
+            ) {
                 $userUid = $profile->displayName;
                 $this->socialConnect->connectLogin($userUid, $uid);
             } else {
