@@ -478,17 +478,25 @@ class ProviderService
                 throw new LoginException($this->l->t('Email already registered'));
             }
             $userPassword = substr(base64_encode(random_bytes(64)), 0, 30);
-            $user = $this->userManager->createUser($uid, $userPassword);
+
+            if ($profile->displayName && $this->userManager->get($profile->displayName) === null) {
+                $userUid = $profile->displayName;
+                $this->socialConnect->connectLogin($userUid, $uid);
+            } else {
+                $userUid = $uid;
+            }
+
+            $user = $this->userManager->createUser($userUid, $userPassword);
 
             if ($this->config->getAppValue($this->appName, 'create_disabled_users')) {
                 $user->setEnabled(false);
             }
 
-            $this->config->setUserValue($uid, $this->appName, 'disable_password_confirmation', 1);
+            $this->config->setUserValue($userUid, $this->appName, 'disable_password_confirmation', 1);
             $updateUserProfile = true;
 
             if (!$this->config->getAppValue($this->appName, 'disable_notify_admins')) {
-                $this->notifyAdmins($uid, $profile->displayName ?: $profile->identifier, $profile->data['default_group']);
+                $this->notifyAdmins($userUid, $profile->displayName ?: $profile->identifier, $profile->data['default_group']);
             }
         }
 
